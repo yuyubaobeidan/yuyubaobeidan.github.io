@@ -313,6 +313,120 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/22/spark2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/yuyu.jpg">
+      <meta itemprop="name" content="枕鱼">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/05/22/spark2/" class="post-title-link" itemprop="url">《spark基础环境配置》</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-05-22 16:18:57" itemprop="dateCreated datePublished" datetime="2022-05-22T16:18:57+08:00">2022-05-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E5%88%86%E4%BA%AB/" itemprop="url" rel="index"><span itemprop="name">学习分享</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="《spark基础环境配置》"><a href="#《spark基础环境配置》" class="headerlink" title="《spark基础环境配置》"></a>《spark基础环境配置》</h1><p>打开一个hosts映射文件,为了保证后续相互关联的虚拟机能够通过主机名进行访问，根据实际需求配置<br>对应的IP和主机名映射，分别将主机名master、slave1、slave2 与IP地址 192.168.88.134、<br>192.168.88.135 和192.168.88.136进行了匹配映射(这里通常要根据实际需要，将要搭建的集群主机都<br>配置主机名和IP映射)。<br>编辑 &#x2F;etc&#x2F;hosts 文件</p>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>vim &#x2F;etc&#x2F;hosts<br>   内容修改为（注：三台主机内容一样）<br>   localhost4.localdomain4 ::1 localhost localhost.localdomain localhost6 localhost6.localdomain6<br>   192.168.88.135 node1<br>   192.168.88.136 node2<br>   192.168.88.137 node3</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>三、集群配置时间同步<br>定义：网络时间服务协议（Network Time Protocol, NTP），是用来使计算机时间同步化的一种协议，它可以使计算机对其服务器做时间同步化。<br>原因：时间同步服务器，顾名思义就是来同步时间的。在集群中同步时间有着十分重要的作用，负载均衡集群或高可用集群如果时间不一致，在服务器之间的数据误差就会很大，寻找数据便会成为一件棘手的事情。若是时间无法同步，那么就算是备份了数据，你也可能无法在正确的时间将正确的数据备份。那损失可就大了。<br>yum 安装 ntp （注：三台主机做同样操作）</p>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>yum install ntp -y<br>   开机自启动ntp<br>   systemctl enable ntpd &amp;&amp; systemctl start ntpd<br>   结果显示： [root@master ~]# systemctl enable ntpd &amp;&amp; systemctl start ntpd Created symlink from &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi- user.target.wants&#x2F;ntpd.service to &#x2F;usr&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;ntpd.service.</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>授权 192.168.88.0-192.168.10.255 网段上的所有机器可以从这台机器上查询和同步时间</p>
+<blockquote>
+<blockquote>
+<blockquote>
+</blockquote>
+<p>   #查看ntp配置文件<br>   ls -al &#x2F;etc | grep ‘ntp’<br>   #显示内容<br>   [root@node1 etc]# ls -al &#x2F;etc | grep ‘ntp’<br>   drwxr-xr-x 3 root root 52 3月 10 18:25 ntp<br>   -rw-r–r– 1 root root 2041 3月 10 20:03 ntp.conf<br>    #编辑内容添加 restrict 192.168.88.0 mask 255.255.255.0 （注：在17行左右） vim &#x2F;etc&#x2F;ntp.conf<br>    16 # Hosts on local network are less restricted.<br>    17 restrict 192.168.88.0 mask 255.255.255.0</p>
+</blockquote>
+</blockquote>
+<p>集群在局域网中，不使用其他互联网上的时间</p>
+<blockquote>
+<blockquote>
+<blockquote>
+</blockquote>
+<pre><code>#修改 /etc/ntpd.conf 内容
+vim vim /etc/ntp.conf # 
+</code></pre>
+</blockquote>
+</blockquote>
+<pre><code>将21-24行内容注释掉（注：原来未注释）   
+21 #server 0.centos.pool.ntp.org iburst 
+22 #server 1.centos.pool.ntp.org iburst 
+23 #server 2.centos.pool.ntp.org iburst 
+24 #server 3.centos.pool.ntp.org iburst 
+# 在25行添加 server masterIP 即为： server 192.168.88.135
+</code></pre>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/05/22/spark2/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/22/spark1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -405,120 +519,6 @@ scp spark-env.sh slave2:/export/server/spark/conf/
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2022/05/22/spark1/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/22/spark2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/yuyu.jpg">
-      <meta itemprop="name" content="枕鱼">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="我的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/05/22/spark2/" class="post-title-link" itemprop="url">《spark基础环境配置》</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-05-22 16:18:57" itemprop="dateCreated datePublished" datetime="2022-05-22T16:18:57+08:00">2022-05-22</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E5%88%86%E4%BA%AB/" itemprop="url" rel="index"><span itemprop="name">学习分享</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="《spark基础环境配置》"><a href="#《spark基础环境配置》" class="headerlink" title="《spark基础环境配置》"></a>《spark基础环境配置》</h1><p>打开一个hosts映射文件,为了保证后续相互关联的虚拟机能够通过主机名进行访问，根据实际需求配置<br>对应的IP和主机名映射，分别将主机名master、slave1、slave2 与IP地址 192.168.88.134、<br>192.168.88.135 和192.168.88.136进行了匹配映射(这里通常要根据实际需要，将要搭建的集群主机都<br>配置主机名和IP映射)。<br>编辑 &#x2F;etc&#x2F;hosts 文件</p>
-<blockquote>
-<blockquote>
-<blockquote>
-<p>vim &#x2F;etc&#x2F;hosts<br>   内容修改为（注：三台主机内容一样）<br>   localhost4.localdomain4 ::1 localhost localhost.localdomain localhost6 localhost6.localdomain6<br>   192.168.88.135 node1<br>   192.168.88.136 node2<br>   192.168.88.137 node3</p>
-</blockquote>
-</blockquote>
-</blockquote>
-<p>三、集群配置时间同步<br>定义：网络时间服务协议（Network Time Protocol, NTP），是用来使计算机时间同步化的一种协议，它可以使计算机对其服务器做时间同步化。<br>原因：时间同步服务器，顾名思义就是来同步时间的。在集群中同步时间有着十分重要的作用，负载均衡集群或高可用集群如果时间不一致，在服务器之间的数据误差就会很大，寻找数据便会成为一件棘手的事情。若是时间无法同步，那么就算是备份了数据，你也可能无法在正确的时间将正确的数据备份。那损失可就大了。<br>yum 安装 ntp （注：三台主机做同样操作）</p>
-<blockquote>
-<blockquote>
-<blockquote>
-<p>yum install ntp -y<br>   开机自启动ntp<br>   systemctl enable ntpd &amp;&amp; systemctl start ntpd<br>   结果显示： [root@master ~]# systemctl enable ntpd &amp;&amp; systemctl start ntpd Created symlink from &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi- user.target.wants&#x2F;ntpd.service to &#x2F;usr&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;ntpd.service.</p>
-</blockquote>
-</blockquote>
-</blockquote>
-<p>授权 192.168.88.0-192.168.10.255 网段上的所有机器可以从这台机器上查询和同步时间</p>
-<blockquote>
-<blockquote>
-<blockquote>
-</blockquote>
-<p>   #查看ntp配置文件<br>   ls -al &#x2F;etc | grep ‘ntp’<br>   #显示内容<br>   [root@node1 etc]# ls -al &#x2F;etc | grep ‘ntp’<br>   drwxr-xr-x 3 root root 52 3月 10 18:25 ntp<br>   -rw-r–r– 1 root root 2041 3月 10 20:03 ntp.conf<br>    #编辑内容添加 restrict 192.168.88.0 mask 255.255.255.0 （注：在17行左右） vim &#x2F;etc&#x2F;ntp.conf<br>    16 # Hosts on local network are less restricted.<br>    17 restrict 192.168.88.0 mask 255.255.255.0</p>
-</blockquote>
-</blockquote>
-<p>集群在局域网中，不使用其他互联网上的时间</p>
-<blockquote>
-<blockquote>
-<blockquote>
-</blockquote>
-<pre><code>#修改 /etc/ntpd.conf 内容
-vim vim /etc/ntp.conf # 
-</code></pre>
-</blockquote>
-</blockquote>
-<pre><code>将21-24行内容注释掉（注：原来未注释）   
-21 #server 0.centos.pool.ntp.org iburst 
-22 #server 1.centos.pool.ntp.org iburst 
-23 #server 2.centos.pool.ntp.org iburst 
-24 #server 3.centos.pool.ntp.org iburst 
-# 在25行添加 server masterIP 即为： server 192.168.88.135
-</code></pre>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2022/05/22/spark2/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
